@@ -19,6 +19,7 @@ go.work
 
 # Build output
 questweaver_backend
+questweaver_pro_backend
 bin/
 dist/
 
