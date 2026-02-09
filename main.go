@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"questweaver_pro_backend/database"
+	"questweaver_pro_backend/profiles"
 
 	jwtmiddleware "github.com/auth0/go-jwt-middleware/v2"
 	"github.com/auth0/go-jwt-middleware/v2/jwks"
@@ -29,6 +30,9 @@ func main() {
 		log.Println("Warning: Error loading .env file:", err)
 		log.Println("Falling back to system environment variables")
 	}
+
+	// Connect to MongoDB
+	database.Connect()
 
 	// Get Auth0 configuration from environment variables
 	auth0Domain := os.Getenv("AUTH0_DOMAIN")
@@ -55,7 +59,7 @@ func main() {
 		validator.RS256,
 		issuerURL,
 		[]string{auth0Audience},
-		validator.WithAllowedClockSkew(5*time.Second),
+		validator.WithAllowedClockSkew(30*time.Second),
 	)
 	if err != nil {
 		log.Fatalf("Failed to set up JWT validator: %v", err)
@@ -78,6 +82,15 @@ func main() {
 	// Weather endpoint (requires Auth0 token)
 	// Convert Auth0 middleware to Gin middleware
 	r.GET("/weather", auth0GinMiddleware(ensureValidToken), getWeather)
+
+	// Profile CRUD endpoints (requires Auth0 token)
+	profileRoutes := r.Group("/profiles", auth0GinMiddleware(ensureValidToken))
+	{
+		profileRoutes.POST("", profiles.CreateProfile)
+		profileRoutes.GET("/:id", profiles.GetProfile)
+		profileRoutes.PUT("/:id", profiles.UpdateProfile)
+		//profileRoutes.DELETE("/:id", profiles.DeleteProfile)
+	}
 
 	// Start server
 	port := os.Getenv("PORT")
