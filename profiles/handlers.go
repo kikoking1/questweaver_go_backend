@@ -26,19 +26,19 @@ func CreateProfile(c *gin.Context) {
 		return
 	}
 
-	if profile.Auth0ID == "" {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "auth0Id is required"})
+	if profile.UserID == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "userId is required"})
 		return
 	}
 
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
-	// Check if a profile with this auth0Id already exists.
+	// Check if a profile with this userId already exists.
 	var existing Profile
-	err := collection().FindOne(ctx, bson.M{"auth0Id": profile.Auth0ID}).Decode(&existing)
+	err := collection().FindOne(ctx, bson.M{"userId": profile.UserID}).Decode(&existing)
 	if err == nil {
-		c.JSON(http.StatusConflict, gin.H{"error": "profile with this auth0Id already exists"})
+		c.JSON(http.StatusConflict, gin.H{"error": "profile with this userId already exists"})
 		return
 	}
 
@@ -52,12 +52,11 @@ func CreateProfile(c *gin.Context) {
 	c.JSON(http.StatusCreated, profile)
 }
 
-// GetProfile handles GET /profiles/:id
+// GetProfile handles GET /profiles/:userId
 func GetProfile(c *gin.Context) {
-	id := c.Param("id")
-	objectID, err := bson.ObjectIDFromHex(id)
-	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid id"})
+	userId := c.Param("userId")
+	if userId == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "userId is required"})
 		return
 	}
 
@@ -65,7 +64,7 @@ func GetProfile(c *gin.Context) {
 	defer cancel()
 
 	var profile Profile
-	err = collection().FindOne(ctx, bson.M{"_id": objectID}).Decode(&profile)
+	err := collection().FindOne(ctx, bson.M{"userId": userId}).Decode(&profile)
 	if err != nil {
 		if err == mongo.ErrNoDocuments {
 			c.JSON(http.StatusNotFound, gin.H{"error": "profile not found"})
@@ -78,12 +77,11 @@ func GetProfile(c *gin.Context) {
 	c.JSON(http.StatusOK, profile)
 }
 
-// UpdateProfile handles PUT /profiles/:id
+// UpdateProfile handles PUT /profiles/:userId
 func UpdateProfile(c *gin.Context) {
-	id := c.Param("id")
-	objectID, err := bson.ObjectIDFromHex(id)
-	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid id"})
+	userId := c.Param("userId")
+	if userId == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "userId is required"})
 		return
 	}
 
@@ -106,7 +104,8 @@ func UpdateProfile(c *gin.Context) {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
-	result, err := collection().UpdateOne(ctx, bson.M{"_id": objectID}, bson.M{"$set": setFields})
+	filter := bson.M{"userId": userId}
+	result, err := collection().UpdateOne(ctx, filter, bson.M{"$set": setFields})
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to update profile"})
 		return
@@ -119,7 +118,7 @@ func UpdateProfile(c *gin.Context) {
 
 	// Return the updated document.
 	var profile Profile
-	err = collection().FindOne(ctx, bson.M{"_id": objectID}).Decode(&profile)
+	err = collection().FindOne(ctx, filter).Decode(&profile)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to fetch updated profile"})
 		return
@@ -128,19 +127,18 @@ func UpdateProfile(c *gin.Context) {
 	c.JSON(http.StatusOK, profile)
 }
 
-// DeleteProfile handles DELETE /profiles/:id
+// DeleteProfile handles DELETE /profiles/:userId
 func DeleteProfile(c *gin.Context) {
-	id := c.Param("id")
-	objectID, err := bson.ObjectIDFromHex(id)
-	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid id"})
+	userId := c.Param("userId")
+	if userId == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "userId is required"})
 		return
 	}
 
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
-	result, err := collection().DeleteOne(ctx, bson.M{"_id": objectID})
+	result, err := collection().DeleteOne(ctx, bson.M{"userId": userId})
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to delete profile"})
 		return

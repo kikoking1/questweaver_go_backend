@@ -59,7 +59,7 @@ func main() {
 		validator.RS256,
 		issuerURL,
 		[]string{auth0Audience},
-		validator.WithAllowedClockSkew(30*time.Second),
+		validator.WithAllowedClockSkew(5*time.Second),
 	)
 	if err != nil {
 		log.Fatalf("Failed to set up JWT validator: %v", err)
@@ -87,9 +87,9 @@ func main() {
 	profileRoutes := r.Group("/profiles", auth0GinMiddleware(ensureValidToken))
 	{
 		profileRoutes.POST("", profiles.CreateProfile)
-		profileRoutes.GET("/:id", profiles.GetProfile)
-		profileRoutes.PUT("/:id", profiles.UpdateProfile)
-		//profileRoutes.DELETE("/:id", profiles.DeleteProfile)
+		profileRoutes.GET("/:userId", profiles.GetProfile)
+		profileRoutes.PUT("/:userId", profiles.UpdateProfile)
+		//profileRoutes.DELETE("/:userId", profiles.DeleteProfile)
 	}
 
 	// Start server

@@ -5,7 +5,7 @@ import "go.mongodb.org/mongo-driver/v2/bson"
 // Profile represents a user profile document in MongoDB.
 type Profile struct {
 	ID            bson.ObjectID `bson:"_id,omitempty" json:"id"`
-	Auth0ID       string        `bson:"auth0Id"       json:"auth0Id"`
+	UserID        string        `bson:"userId"        json:"userId"`
 	PreferredName string        `bson:"preferredName" json:"preferredName"`
 }
 
